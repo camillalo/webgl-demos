@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>绘制二维长方形</title>
+</head>
+<body>
+    <canvas id="canvasContainer" width="500" height="400">
+        你的浏览器不支持canvas！请升级你的浏览器！
+    </canvas>
+    <script>
+        window.onload = main();
+        // 开始绘制
+        function main() {
+            const canvas = document.querySelector('#canvasContainer');
+            if(!canvas) {
+                return false;
+            }
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0,0,255,1)';
+            ctx.fillRect(100, 10, 120, 120);
+        }
+    </script>
+</body>
+</html>

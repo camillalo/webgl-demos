@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>webgl清空画布</title>
+</head>
+<body>
+    <canvas id="canvas" width="600" height="400">
+        您的浏览器不支持canvas!
+    </canvas>
+    <script src="../WebGL-Programming-Guide/lib/webgl-utils.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/webgl-debug.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/cuon-utils.js"></script>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const gl = getWebGLContext(canvas);
+        gl.clearColor(0,0,0,1);
+        gl.clear(gl.COLOR_BUFFER_BIT); // 颜色缓冲
+    </script>
+    
+</body>
+</html>
