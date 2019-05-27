@@ -60,11 +60,16 @@
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             // 清空canvas
             gl.clear(gl.COLOR_BUFFER_BIT);
-            // 绘制三个点
+            // 绘制三个点，n告诉函数需要回执多少个顶点。WebGL系统不知道缓冲区有多少个顶点（即使知道也不确定是否全部画出来），所以我们应该显示告诉他绘制多少个点
             gl.drawArrays(gl.POINTS, 0, n);
         }
+        /* 
+        功能：创建顶点缓冲区对象，
+            并将多个顶点的数据保存在缓存区，
+            最后将缓存区传给顶点着色器
+         */
         function initVertexBuffers(gl) {
-            const vertices = new Float32Array([
+            const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
                 0.0, 0.5, -0.5, -0.5, 0.5, -0.5
             ]);
             const n = 3; // 点的个数

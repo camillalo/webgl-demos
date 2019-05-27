@@ -96,7 +96,14 @@
 - gl.drawArray(mode, first, count):一个强大的函数，可会知各种图形，规范如下
     参数 | 描述
     - | -
-    mode|指定绘制方式，可接收常量符号：gl.POINTS，gl.LINES,gl.LINE_STRIP,gl.LINE_LOOP,gl.TRIANFLES,gl.TRIANGLE_STRIP,gl.TRIANGLE_FAN
+    mode|指定绘制方式，可接收常量符号：
+        gl.POINTS：一系列点
+        gl.LINES：一系列单独线段，若为奇数个点，最后一个点忽略
+        gl.LINE_STRIP：一系列连接的线段
+        gl.LINE_LOOP：一系列连接的线段，形成回路
+        gl.TRIANFLES：一系列单独三角形，最后多出的2个或1个点忽略
+        gl.TRIANGLE_STRIP：一系列条带状三角形。两三角形共用两个点
+        gl.TRIANGLE_FAN：一系列三角形组成类似扇形的图形。所有三角形会共用一个点
     first|指定从那个顶点开始绘制（整数型）（0开始）
     count|指定会只需要多少个顶点（整数型）
     补充|顶点着色器执行的次数为count次，每次处理一个顶点
@@ -138,6 +145,53 @@
     - 构成三维模型的基本单位是---三角形
     - 上章，点击绘制点逻辑，将点存储在一个数组中，再循环遍历数组，每次遍历向着色器传入一个点，并绘制
     - 但是对由多个顶点组成的图形，如三角形来说，你需要一次性将图形的顶点全部传入顶点着色器，才能将图形绘制出来-------webgl提供另一种机制----缓冲区对象--一次性想着色器传入多个顶点数据---是webgl系统中的一块内存区域----一次性填充大量顶点数据---供顶点着色器使用
+    - 使用缓冲区对象向顶点着色器传入顶点数据，遵循5个步骤：
+        1. 创建缓冲区对象-gl.createBuffer()--使用WebGL,需要显示的创建缓冲区对象，创建完成后，WebGL系统中多了一个缓冲区对象。
+            - gl.deleteBuffer(buffer)删除缓冲区对象
+        2. 绑定缓冲区对象-gl.bindBuffer()--将缓冲区对象绑定到WebGL系统中已经存在的target上。target:表示缓冲区对象的用途。target参数值为：
+            参数|描述
+            -|-
+            gl.ARRAY_BUFFER|表示缓冲区对象包含了顶点的数据
+            gl.ELEMENT_ARRAY_BUFFER|表示缓冲区对象包含了顶点的索引值
+            PS|绑定后WebGL系统状态发生变化，它的target就会指向当前的缓冲区对象
+        3. 将数据写入缓冲区对象-gl.bufferData()--效果：将第二个参数的数据写入到第一个参数指定的缓冲区对象上。【我们不能直接向缓冲区对象写入数据，借助target中间件】。第3个参数usage表示程序如何*使用*缓冲区对象中的数据（并帮助webgl优化操作）：
+            参数|描述
+            -|-
+            gl.STATIC_DRAW|只向缓冲区写入一次数据，绘制次数多次--只一次修改，可多次使用（数据不会变）
+            gl.STREAM_DRAW|只向缓冲区写入一次数据，然后绘制若干次--一次修改，一次使用（数据每帧都不同）
+            gl.DYNAMIC_DRAW|向缓冲区多次写入数据，并绘制很多次--多次修改，多次绘制（数据可被频繁修改）
+            - new了一个Float32Array【类型化数组对象】。因为JS中Array是通用对象，没有对“大量元素都是同一种类型”的情况进行优化
+            - 【类型化数组对象】：绘制三维图形时，WebGL需要处理大量同类型数据，如顶点坐标和颜色，为了优化性能，WebGL为每种基本数据类型引用了一种特殊的数组---类型化数组--浏览器事先知道数组中数据类型，所以处理起来更有效率：
+                数据类型|每个元素占用字节数|用C语言中数据类型描述
+                -|-|-
+                Int8Array|1|8位整型数signed char
+                UInt8Array|1|8位无符号整型数unsigned char
+                Int16Array|2|16位整型数signed short
+                UInt16Array|2|16位无符号整型数unsigned short
+                Int32Array|4|32位整型数signed int
+                UInt32Array|4|32位无符号整型数unsigned int
+                Float32Array|4|单精度32位浮点数float
+                Float64Array|8|双精度64位浮点数double
+            - 只能使用new运算符创建
+            - PS:与普通数组不同，类型化数组不支持push()和pop()
+            - 方法:
+                - get(index)
+                - set(index.val)
+                - set(array,offset)
+                - length
+                - BYTES_PER_ELEMENT
+        4. 将缓冲区对象分配给一个attribute变量-gl.vertexAttribPointer()--实际是将缓冲区对象的引用或指针--分配给attribute变量：
+            参数|描述
+            -|-
+            location|attribute变量的位置，也就是target绑定的缓冲区将指定的变量
+            size|【1-4】，指定缓冲区每个顶点需要的分量数，设置不够则自动补全0或1
+            type|数据格式：gl.UNSIGNED_BYTE,gl.SHORT,UNSIGNED_SHORT,INT,UNSIGNED_INT,FLOAT
+            normalized|true/false
+            stride|默认0，指定两个顶点之间的字节数
+            offset|对象偏移量，变量从缓冲区何处开始存储。0是从起始位置开始
+        5. 开启attribute变量-gl.enableVertexAttribArray(location)--这是从OpenGL中继承而来的一个历史原因。看似处理attribute【实际是处理缓冲区】。作用：开启attribute变量，使顶点着色器能够访问缓冲区数据
+            - disableVertexAttribArray()
+        6. 最后，绘制gl.drawArrays(mode，first，count).count表示多少个点，着色器将会执行多少次
 - 绘制三角形
 - 【*】移动、旋转、缩放（用矩阵简化变换）
 
