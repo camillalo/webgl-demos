@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>旋转矩阵---平移矩阵，缩放矩阵原理相同</title>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400" style="width:400px; height: 400px;">
+        您的浏览器不支持canvas!
+    </canvas>
+    <script src="../WebGL-Programming-Guide/lib/webgl-utils.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/webgl-debug.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/cuon-utils.js"></script>
+    <script>
+        // 顶点着色器
+        // x' = xcosb - ysinb
+        // y' = xsinb + ycosb
+        // z'=z
+        const VSHADER_SOURCE = `
+            attribute vec4 a_Position;
+            // 绕轴旋转-旋转矩阵
+            uniform mat4 u_xformMatrix;
+            void main() {
+               gl_Position = u_xformMatrix * a_Position;
+            }
+        `;
+        // 片段着色器
+        const FSHADER_SOURCE = `
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `;
+        
+        // 旋转角度
+        const ANGLE = 90.0;
+        main();
+        function main() {
+            const canvas = document.getElementById('canvas');
+            if (!canvas) {
+                console.log("Failed to retrieve the <canvas> element");
+                return;
+            }
+
+            //获取WebGL绘图上下文
+            var gl = getWebGLContext(canvas);
+            if (!gl) {
+                console.log("Failed to get the rendering context for WebGL");
+                return;
+            }
+
+            // 初始化着色器
+            if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                console.log('Failed to init shaders');
+                return;
+            }
+            // 设置顶点位置
+            const n = initVertexBuffers(gl);
+            if (n < 0) {
+                console.log('Failed to set the positions of the vertices.')
+                return;
+            }
+            // 创建旋转矩阵
+            const radian = Math.PI * ANGLE / 180;
+            const cosB = Math.cos(radian);
+            const sinB = Math.sin(radian);
+            // 注意WebGL中矩阵是列主序的，先第一列，在第二列，往后
+            const xformMatrix = new Float32Array([
+                cosB, sinB, 0.0, 0.0,
+                -sinB, cosB, 0.0, 0.0,
+                0.0, 0.0, 1.0, 0.0,
+                0.0, 0.0, 0.0, 1.0
+            ])
+            // 将矩阵传给着色器
+            const u_xformMatrix = gl.getUniformLocation(gl.program, 'u_xformMatrix');
+            gl.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
+            // 设置背景色
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            // 清空canvas
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            // 【区别2】，第一个参数
+            gl.drawArrays(gl.TRIANGLES, 0, n);
+        }
+        /* 
+        功能：创建顶点缓冲区对象，
+            并将多个顶点的数据保存在缓存区，
+            最后将缓存区传给顶点着色器
+         */
+        function initVertexBuffers(gl) {
+            const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
+                0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+            ]);
+            const n = 3; // 点的个数
+
+            // 创建缓冲区对象
+            var vertexBuffer = gl.createBuffer();
+            if (!vertexBuffer) {
+                console.log('Failed to create the buffer object');
+                return -1;
+            }
+            // 将缓冲区对象绑定到目标
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            // 向缓冲区对象写入数据
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            if (a_Position < 0) {
+                console.log("Failed to get the storage location of a_Position");
+                return -1;
+            }
+
+            //将缓冲区对象分配给a_Postion变量
+            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+            //连接a_Postion变量与分配给它的缓冲区对象
+            gl.enableVertexAttribArray(a_Position);
+
+            return n;
+        }
+    </script>
+</body>

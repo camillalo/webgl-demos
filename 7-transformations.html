@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>移动、缩放、旋转</title>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400" style="width:400px; height: 400px;">
+        您的浏览器不支持canvas!
+    </canvas>
+    <script src="../WebGL-Programming-Guide/lib/webgl-utils.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/webgl-debug.js"></script>
+    <script src="../WebGL-Programming-Guide/lib/cuon-utils.js"></script>
+    <script>
+        // 顶点着色器
+        // x' = xcosb - ysinb
+        // y' = xsinb + ycosb
+        // z'=z
+        const VSHADER_SOURCE = `
+            attribute vec4 a_Position;
+            // 【区别1】因为Tx,Ty,Tz对于所有顶点都是一致的，所以使用Uniform变量了来表示平移距离
+            // 使用uniform是因为这个变量的值与顶点无关
+            uniform vec4 u_Translation;
+            // 【旋转】基于平移后，在旋转
+            uniform float u_SinB, u_CosB;
+            void main() {
+                // 【区别2】GLSLES中同类型变量可以执行赋值操作
+                // vec4直接相加，两个矢量对应的分量会同时相应相加【GLSL ES提供的特性之一】
+                // gl_Position = a_Position + u_Translation;
+                // 旋转等式
+                gl_Position.x = (a_Position + u_Translation).x * u_CosB - (a_Position + u_Translation).y * u_SinB;
+                gl_Position.y = (a_Position + u_Translation).x * u_SinB + (a_Position).y * u_CosB;
+                gl_Position.z = (a_Position + u_Translation).z;
+                gl_Position.w = 1.0;
+            }
+        `;
+        // 片段着色器
+        const FSHADER_SOURCE = `
+            void main() {
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+            }
+        `;
+        // 【区别3】在x,y,z上平移的距离
+        const Tx = 0.2;
+        const Ty = 0.2;
+        const Tz = 0.2;
+        // 旋转角度
+        const ANGLE = 90.0;
+        main();
+        function main() {
+            const canvas = document.getElementById('canvas');
+            if (!canvas) {
+                console.log("Failed to retrieve the <canvas> element");
+                return;
+            }
+
+            //获取WebGL绘图上下文
+            var gl = getWebGLContext(canvas);
+            if (!gl) {
+                console.log("Failed to get the rendering context for WebGL");
+                return;
+            }
+
+            // 初始化着色器
+            if (!initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE)) {
+                console.log('Failed to init shaders');
+                return;
+            }
+            // 设置顶点位置
+            const n = initVertexBuffers(gl);
+            if (n < 0) {
+                console.log('Failed to set the positions of the vertices.')
+                return;
+            }
+            // 【区别4】将平移距离传输给顶点着色器，获取uniform的变量位置
+            const u_Translation = gl.getUniformLocation(gl.program, 'u_Translation');
+            gl.uniform4f(u_Translation, Tx, Ty, Tz, 0.0); // 第4个分量为0.0？
+            // 旋转图形所需的数据传给顶点着色器
+            const radian = Math.PI * ANGLE / 180.0; // 转为弧度
+            const sinB = Math.sin(radian);
+            const cosB = Math.cos(radian);
+            const u_SinB = gl.getUniformLocation(gl.program, 'u_SinB');
+            if (u_SinB < 0) {
+                console.log("Failed to get the storage location of u_SinB");
+                return;
+            }
+            const u_CosB = gl.getUniformLocation(gl.program, 'u_CosB');
+            if (u_CosB < 0) {
+                console.log("Failed to get the storage location of u_CosB");
+                return;
+            }
+            gl.uniform1f(u_SinB, sinB);
+            gl.uniform1f(u_CosB, cosB);
+            // 设置背景色
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            // 清空canvas
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            // 【区别2】，第一个参数
+            gl.drawArrays(gl.TRIANGLES, 0, n);
+        }
+        /* 
+        功能：创建顶点缓冲区对象，
+            并将多个顶点的数据保存在缓存区，
+            最后将缓存区传给顶点着色器
+         */
+        function initVertexBuffers(gl) {
+            const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
+                0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+            ]);
+            const n = 3; // 点的个数
+
+            // 创建缓冲区对象
+            var vertexBuffer = gl.createBuffer();
+            if (!vertexBuffer) {
+                console.log('Failed to create the buffer object');
+                return -1;
+            }
+            // 将缓冲区对象绑定到目标
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            // 向缓冲区对象写入数据
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+            if (a_Position < 0) {
+                console.log("Failed to get the storage location of a_Position");
+                return -1;
+            }
+
+            //将缓冲区对象分配给a_Postion变量
+            gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+            //连接a_Postion变量与分配给它的缓冲区对象
+            gl.enableVertexAttribArray(a_Position);
+
+            return n;
+        }
+    </script>
+</body>

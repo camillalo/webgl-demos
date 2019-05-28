@@ -61,7 +61,11 @@
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             // 清空canvas
             gl.clear(gl.COLOR_BUFFER_BIT);
-            // 【区别2】，第一个参数
+            // 【TRIANGLE_STRIP】
+            // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+            // TRIANGLE_FAN
+            // gl.drawArrays(gl.TRIANGLE_FAN, 0, n);
+            // TRIANGLES
             gl.drawArrays(gl.TRIANGLES, 0, n);
         }
         /* 
@@ -70,10 +74,21 @@
             最后将缓存区传给顶点着色器
          */
         function initVertexBuffers(gl) {
+            // 【实现方式一：TRIANGLES】
             const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
-                0.0, 0.5, -0.5, -0.5, 0.5, -0.5
+                0.5, 0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5
             ]);
-            const n = 3; // 点的个数
+            const n = 6;
+            // 【实现方式一：TRIANGLE_STRIP】
+            // const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
+                // 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5,-0.5
+            // ]);
+            // const n = 4;
+            // 【实现方式一：TRIANGLE_FAN】
+            // const vertices = new Float32Array([ // 一组特殊的Javascrip数组，用来写入缓冲区
+            //     0.5, 0.5, -0.5, 0.5,-0.5, -0.5, 0.5, -0.5
+            // ]);
+            // const n = 4;
 
             // 创建缓冲区对象
             var vertexBuffer = gl.createBuffer();
