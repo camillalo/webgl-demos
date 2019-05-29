@@ -21,20 +21,20 @@
 
         const VSHADER_SOURCE = `
             attribute vec4 a_Position;
-            attribute vec2 a_TexCoord;
-            varying vec2 v_TexCoord;
+            attribute vec2 a_TexCoord; // 动态修改文理坐标
+            varying vec2 v_TexCoord; // 传入片源着色器的变量
             void main() {
                 gl_Position = a_Position;
-                v_TexCoord = a_TexCoord;
+                v_TexCoord = a_TexCoord; // 文理图像坐标
             }
             `;
         // 片元着色器
         const FSHADER_SOURCE = `
             precision mediump float;
             uniform sampler2D u_Sampler;
-            varying vec2 v_TexCoord;
+            varying vec2 v_TexCoord; // 接收从顶点着色器传入的变量值
             void main() {
-                gl_FragColor = texture2D(u_Sampler, v_TexCoord);
+                gl_FragColor = texture2D(u_Sampler, v_TexCoord); // 着色器根据每个片源的纹理坐标从文理图像抽取纹素颜色
             }
             `;
 
@@ -78,14 +78,15 @@
         function initVertexBuffers(gl) {
             var verticesTexCoords = new Float32Array(
                 [
-                    //     -0.5, 0.5, 0.0, 1.0,
-                    //     -0.5, -0.5, 0.0, 0.0,
-                    //     0.5, 0.5, 1.0, 1.0,
-                    //     0.5, -0.5, 1.0, 0.0,
-                    -0.5, 0.5, -0.3, 1.7,
-                    -0.5, -0.5, -0.3, -0.2,
-                    0.5, 0.5, 1.7, 1.7,
-                    0.5, -0.5, 1.7, -0.2
+                    // 顶点坐标和纹理坐标，优化性能，对应关系，左左-右右-上上-下下
+                    -0.5, 0.5, 0.0, 1.0,
+                    -0.5, -0.5, 0.0, 0.0,
+                    0.5, 0.5, 1.0, 1.0,
+                    0.5, -0.5, 1.0, 0.0,
+                    // -0.5, 0.5, -0.3, 1.7,
+                    // -0.5, -0.5, -0.3, -0.2,
+                    // 0.5, 0.5, 1.7, 1.7,
+                    // 0.5, -0.5, 1.7, -0.2
                 ]
             );
             var n = 4;//顶点数目
@@ -127,14 +128,16 @@
 
             return n;
         }
+
+        // 负责配置和加载纹理
         function initTextures(gl, n) {
-            var texture = gl.createTexture(); //创建纹理对象
+            var texture = gl.createTexture(); //创建纹理对象，用来管理WebGL系统中的纹理
             if (!texture) {
                 console.log('Failed to create the texture object');
                 return false;
             }
 
-            //获取u_Sampler的存储位置
+            //获取uniform变量u_Sampler的存储位置---取样器--该变量用来接收纹理图像
             var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
             if (!u_Sampler) {
                 console.log('Failed to get the storage location of u_Sampler');
