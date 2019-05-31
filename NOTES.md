@@ -584,6 +584,92 @@ GLSL ES用来处理一些通用功能：图像处理和数据运算（所谓的G
         ```
         - 数组的值必须显式子的用下标访问对每个元素进行初始化赋值。不能一次性初始化赋值。
     - 取样器（纹理）
+        - 【是GLSL ES的一种内置类型】，
+        - 必须通过该类型变量访问纹理。
+        - 取样器变量【只能是uniform变量】，或者访问纹理的函数如texture2D的参数。
+        - 唯一能赋值给取样器变量的就是纹理单元编号，而且必须使用gl.uniformi(u_Sampler, 0)来赋值
+        - mediumpp是一个精度限定字。
+        - 受到纹理单元的最大数量的限制
+    - 运算符优先级
+    - 程序流程控制：分支和循环
+        同JS或C几乎无不同。
+        - if /if else/ else， 这种语句太多会降低着色器的执行速度
+        - 没有switch 语句 
+        - for语句，只允许一个int/float类型的循环变量
+        - continue,break,discard语句 可以与for和if语句搭配使用
+            - discard只能在片元着色器使用，放弃当前片元，处理下一个片元
+        - 函数，定义方式不同于JS，类似C。但，不能在函数内部调用本身，不支持递归调用。
+            ```c
+            /* 返回类型 函数名（type0 arg1, type1 arg1...） {
+                函数计算
+                return 返回值；
+            }
+            */
+            /*
+                调用： 函数名(参数)
+            */
+            ```
+        - 规范声明
+            将函数提前进行规范声明，保证在函数定义之前可以调用
+        - 参数限定词
+            限定词|描述
+            -|-
+            in|向函数中传值|【默认】可修改，使用，不影响传入的变量
+            const in|向函数中传值|可使用，不可修改，不影响传入的变量
+            out|在函数中被赋值，并被传出|传入变量的引用，修改后，影响传入变量
+            inout|传入函数，并在函数中被赋值，并被传出|传入变量的引用，使用变量初始值，修改值，影响传入变量
+        - 内置函数
+            类别|内置函数
+            -|-
+            角度函数|radians,degrees
+            三角函数|
+            指数函数|
+            通用函数|
+            几何函数|
+            矩阵函数|
+            矢量函数|
+            纹理查询函数|
+        - 全局变量和局部变量
+            函数外是全局变量，函数内是局部变量
+            - uniform/attribute/varying必须是全局变量声明
+        - 存储限定字
+            - const/attribute/varying/uniform
+            - attribute只能出现在顶点着色器中。
+            - 限定字类型变量由最大数目限制，与设备有关，可以通过内置全局参数访问
+            - attribute/ 最大const mediump int gl_MaxVertexAttribute/最小 8
+            - uniform顶点着色器/最大const mediump int gl_MaxVertexUniformVectors/ 最小 128
+            - uniform片元着色器/最大const mediump int gl_MaxFragmentUniformVectors/最小 16
+            - varying/最大 const mediump int gl_MaxVaryingVectors/最小 8
+        - 精度限定字
+            GLSL ES新引入了精度限定字，【目的】帮助着色器程序提高运行效率，削减内存开支。
+            - 用来表示内中数据具有的精度（比特数）
+            ```c
+            // 如果不确定的情况，使用默认如下
+            #ifdef GL_ES
+            precision mediump float; //所有float默认中精度； 还有highp lowp 可单独修饰变量 lowp float size;
+            #endif
+            ```
+            - 顶点着色器/片元着色器中，int/float/sampler2D/samplerCube都会由默认精度
+            - 但是片元着色器中，float 没有设置默认值，【需要手动指定】，如果不指定会报错
+        - 预处理指令（支持）
+            在代码编译前进行预处理，以#开始
+            ```c
+            #ifdef GL_ES // 是否已经定义了GL_ES宏
+            #endif
+
+            #ifdef 某宏 // 内置宏 GL_ES GL_FRAGMENT_PRECISION_HIGH
+            #endif
+
+            #ifndef 某宏
+            #endif
+
+            #if 条件表达式
+            #else
+            #endif
+
+            #define NUM 100
+            ```
+            
 # 三维世界
 - 立方体由三角形构成
 - 视点、视线
