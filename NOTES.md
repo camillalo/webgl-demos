@@ -394,11 +394,78 @@
                 - WebGL中没法直接操作纹理对象，必须通过操作纹理单元来操作纹理对象
             - 配置纹理对象参数
                 - 用来设置纹理对象映射到图形上的具体方式
+                - gl.texParameteri()参数
+                - 方法可以多次调用，多次配置
+                    参数|描述|取值
+                    -|-|-
+                    target|gl.TEXTURE_2D,gl.TEXTURE_CUDE_MAP|纹理类型
+                    pname|-|纹理参数
+                    -|gl.TEXTURE_MAG_FILTER|gl.LINEAR|纹理放大，纹理小于绘制面板，需要填充像素间的空隙，linear是默认填充方法
+                    -|gl.TEXTURE_MIN_FILTER|gl.NEAREST_MIPMAP_LINEAR|纹理缩小，纹理大于面板，需要剔除像素
+                    -|gl.TEXTURE_WRAP_S|gl.REPEAT|纹理水平填充，对纹理左侧/右侧区域填充
+                    -|gl.TEXTURE_WRAP_T|gl.REPEAT|纹理垂直填充，对纹理上侧/下侧区域填充
+                    param|-|纹理参数的值---见上述取值|
+                    - | MAG/MIN的非金字塔纹理类型常量|gl.NEAREST距中心最近的像素颜色值,gl.LINEAR距中心最近的4个像素颜色值的加权平均
+                    - | T/S的常量|gl.REPEAT重复,gl.MIRRORED_REPEAT镜像对称重复,CLAMP_TO_EDGE纹理图像边缘值
+            - 将纹理图像分配给纹理对象
+                - gl.texImage2D()将纹理图像分配给纹理对象，并传入参数告诉webGL系统关于该图像的特性
+                     参数|取值|秒手术
+                     -|-|-
+                     target|gl.TEXTURE_2D,gl.TEXTURE_CUDE_MAP|纹理类型
+                     level|0|本书不涉及，专为金字塔纹理准备
+                     internalformat|gl.RGB等|图像内部格式、纹素数据格式
+                     format|取值同上|纹理数据格式
+                     type|-|纹理数据类型
+                     image|Image对象|JavaScript纹理图像对象
+                - 纹素数据格式internalformat/format
+                    格式|描述
+                    -|-
+                    gl.RGB|红蓝绿
+                    gl.RGBA|红绿蓝、透明度
+                    gl.ALPHA|（0.0，0.0，0.0，透明度）
+                    gl.LUMINANCE|l,l,l,1l:流明（流明表示我们感知到的物体表面的亮度）
+                    gl.LUMINANCE_ALPHA|L,L,L,透明度
+                - 纹理数据格式type
+                    格式|描述
+                    -|-
+                    gl.UNSIGNED_BYTES|无符号整形，每个颜色分量占一个字节
+                    gl.UNSIGNED_SHORT_5_6_5|RGB:颜色分量分别占5、6、5比特
+                    gl.UNSIGNED_SHORT_4_4_4_4|RGBA:颜色分量分别占4，4，4，4比特
+                    gl.UNSIGNED_SHORT_5_5_5_1|RGBA:颜色分量分别占5比特，A分量占1比特
+                    PS|除UNSIGNED_BYTES之外，后面格式常用来压缩数据，减少浏览器加载图像的时间
+                - 将纹理单元传递给片元着色器
+                    - 一旦纹理图像传入了WebGL系统，就必须将其传入片元着色器并映射到图形表面。着色器上用uniform变量存储纹理。
+                    - uniform sampler2D u_Sampler;
+                    - sampler2D是一种特殊的、专用于纹理对象的数据类型
+                        类型|描述
+                        -|-
+                        sampler2D|绑定到gl.TEXTURE_2D上的纹理数据类型，本书只用这种
+                        samplerCube|绑定到gl.TEXTURE_CUDE_MAP上的纹理数据类型
+                    - 在initTextures()中，我们得到u_Samplet的存储地址，并通过【纹理单元编号】将纹理对象传给u_Sampler。gl.uniformi(**,0编号) 
+                - 从顶点着色器向片元着色器传输纹理坐标
+                    - 顶点attribute变量接受顶点的纹理坐标，光栅化后，内插传给片元着色器
+                - 在片元着色器中获取纹理像素坐标
+                    - texture2D()是GLSL ES内置函数，用来抽取纹素颜色，参数1：纹理单元编号sampler；参数2：纹理坐标coord。
+                    - 返回值：gl.RGB/RGBA/ALPHA/LUNIMANCE/LUMINANCE_ALPHA
+                    - 将返回值赋值给gl.FragColor
+                - 一切准备好后，开始drawArrays()
     - 绘制矩形
 - 使用多幅纹理
+    - 原理同上
+    - vec4 * vec4 =>vec4，GLSL ES中相同类型矢量可以直接相乘，得到结果。 
 
 # OpenGL着色器语言(GLSL ES)
+学习OpenGL着色器语言（GLSL ES)及其关键特性。
+- 概念
+    - 着色器是WebGL渲染三维图形的关键，GLSL ES是专门用来编写着色器的编程语言。
+    - 了解GLSL ES后，你将知道【如何编写各式各样的着色器程序】
 - 语法
+    - 数据、变量、变量类型
+    - 矢量、矩阵、结构体、数组、采样器（纹理）
+    - 运算、程序流、函数
+    - attribute、uniform、varying变量
+    - 精度限定词
+    - 预处理和指令
 
 # 三维世界
 - 立方体由三角形构成
